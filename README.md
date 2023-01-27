@@ -25,6 +25,11 @@ openai api fine_tunes.create -t dataset.jsonl -m davinci --suffix "<YOUR_MODEL_N
 7. Create Telegram bot using BotFather
 8. Update tg_bot.py with your bot token, OpenAI Token and model name.
 9. Run!
+For english version:
 ```
-python tg_bot.py
+python tg_bot_rus.py
+```
+For russian version:
+```
+python tg_bot_rus.py
 ```
