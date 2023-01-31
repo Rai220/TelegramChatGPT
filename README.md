@@ -27,7 +27,7 @@ openai api fine_tunes.create -t dataset.jsonl -m davinci --suffix "<YOUR_MODEL_N
 9. Run!
 For english version:
 ```
-python tg_bot_rus.py
+python tg_bot_eng.py
 ```
 For russian version:
 ```
