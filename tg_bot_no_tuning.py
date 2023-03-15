@@ -45,7 +45,7 @@ def _process_rq(user_id, rq):
 
 @bot.message_handler(commands=['start', 'help', 'clear'])
 def send_welcome(message):
-    user = _get_user(message.from_user.id, message.from_user.first_name)
+    user = _get_user(message.from_user.id)
     user['history'] = _get_clear_history()
     bot.reply_to(message, f"Started! (History cleared). Using model {model}")
 
