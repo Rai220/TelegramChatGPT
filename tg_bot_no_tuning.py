@@ -25,7 +25,7 @@ model = "gpt-3.5-turbo-0301"
 users = {}
 
 def _count_tokens(user):
-    return sum([tokenizer.count_tokens(x['content']) for x in user['history']])
+    return sum([len(tokenizer.encode(x['content'])) for x in user['history']])
 
 
 def _get_clear_history():
