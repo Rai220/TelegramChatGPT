@@ -1,12 +1,32 @@
 import telebot
 import openai
 import time
+import tiktoken
+import os
 
-bot = telebot.TeleBot("<YOUR_TG_BOT_KEY_HERE>")
-openai.api_key = "<YOUR_OPEN_API_KEY_HERE>"
+tokenizer = tiktoken.get_encoding("cl100k_base")
+
+max_history = 3500 # Hstory will be truncated after this length
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    print("Please set OPENAI_API_KEY environment variable")
+    exit()
+
+TG_TOKEN = os.getenv("TG_TOKEN")
+if not TG_TOKEN:
+    print("Please set TG_TOKEN environment variable")
+    exit()
+
+bot = telebot.TeleBot(TG_TOKEN)
+openai.api_key = OPENAI_API_KEY
 model = "gpt-3.5-turbo-0301"
 
 users = {}
+
+def _count_tokens(user):
+    return sum([tokenizer.count_tokens(x['content']) for x in user['history']])
+
 
 def _get_clear_history():
     current_date = time.strftime("%d.%m.%Y", time.localtime())
@@ -30,6 +50,9 @@ def _process_rq(user_id, rq):
     if rq and len(rq) > 0 and len(rq) < 250:
         print(f">>> ({user_id}) {rq}")
         user['history'].append({"role": "user", "content": rq})
+        while(_count_tokens(user) > max_history):
+            user['history'].pop(0)
+
         completion = openai.ChatCompletion.create(
             model=model, messages=user['history'], temperature=0.7)
         ans = completion['choices'][0]['message']['content']

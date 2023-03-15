@@ -33,3 +33,8 @@ For russian version:
 ```
 python tg_bot_rus.py
 ```
+
+# Free chat with GPT-3.5
+```
+OPENAI_API_KEY=<YOUR_OPENAI_KEY> TG_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN> python tg_bot_no_tuning.py
+```
