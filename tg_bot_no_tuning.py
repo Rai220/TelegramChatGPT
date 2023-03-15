@@ -9,7 +9,9 @@ model = "gpt-3.5-turbo-0301"
 users = {}
 
 def _get_clear_history():
-    return [{"role": "system", "content": "Ты полезный ассистент с ИИ, который готов помочь своему пользователю."}]
+    current_date = time.strftime("%d.%m.%Y", time.localtime())
+    return [{"role": "system", "content": f"Ты полезный ассистент с ИИ, который готов помочь своему пользователю. Ты даешь короткие содержательные ответы, обычно не более 100 символов. Сегодняшняя дата: {current_date}."}]
+
 
 def _get_user(id):
     user = users.get(id, {'id': id, 'history': _get_clear_history(), 'last_prompt_time': 0})
@@ -19,8 +21,8 @@ def _get_user(id):
 
 def _process_rq(user_id, rq):
     user = _get_user(user_id)
-    # if last prompt time > 10 minutes ago - drop context
-    if time.time() - user['last_prompt_time'] > 600:
+    # if last prompt time > 60 minutes ago - drop context
+    if time.time() - user['last_prompt_time'] > 60*60:
         last_text = ''
         user['last_prompt_time'] = 0
         user['history'] = _get_clear_history()
@@ -29,7 +31,7 @@ def _process_rq(user_id, rq):
         print(f">>> ({user_id}) {rq}")
         user['history'].append({"role": "user", "content": rq})
         completion = openai.ChatCompletion.create(
-            engine=model, temperature=0.7)
+            model=model, messages=user['history'], temperature=0.7)
         ans = completion['choices'][0]['message']['content']
         print(f"<<< ({user_id}) {ans}")
         user['history'].append({"role": "user", "content": ans})
@@ -41,9 +43,9 @@ def _process_rq(user_id, rq):
         return "!!! Error! Please use simple short texts"
 
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['start', 'help', 'clear'])
 def send_welcome(message):
-    user = _get_user(message.from_user.id)
+    user = _get_user(message.from_user.id, message.from_user.first_name)
     user['history'] = _get_clear_history()
     bot.reply_to(message, f"Started! (History cleared). Using model {model}")
 
