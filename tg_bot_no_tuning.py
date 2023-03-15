@@ -23,6 +23,14 @@ model = "gpt-3.5-turbo-0301"
 
 users = {}
 
+def log(text):
+    # Print to screen and log file
+    print(text)
+    with open("log.txt", "a") as f:
+        # Add date to text
+        text = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()) + " " + text
+        print(text, file=f)
+
 def _count_tokens(user):
     return sum([len(tokenizer.encode(x['content'])) for x in user['history']])
 
@@ -47,7 +55,7 @@ def _process_rq(user_id, rq):
         user['history'] = _get_clear_history()
 
     if rq and len(rq) > 0 and len(rq) < 250:
-        print(f">>> ({user_id}) {rq}")
+        log(f">>> ({user_id}) {rq}")
         user['history'].append({"role": "user", "content": rq})
         while(_count_tokens(user) > max_history):
             user['history'].pop(0)
@@ -55,7 +63,7 @@ def _process_rq(user_id, rq):
         completion = openai.ChatCompletion.create(
             model=model, messages=user['history'], temperature=0.7)
         ans = completion['choices'][0]['message']['content']
-        print(f"<<< ({user_id}) {ans}")
+        log(f"<<< ({user_id}) {ans}")
         user['history'].append({"role": "user", "content": ans})
         user['last_prompt_time'] = time.time()
         return ans
