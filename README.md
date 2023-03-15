@@ -37,4 +37,4 @@ python tg_bot_rus.py
 # Free chat with GPT-3.5
 ```
 OPENAI_API_KEY=<YOUR_OPENAI_KEY> TG_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN> python tg_bot_no_tuning.py
-```
+```OPENAI_API_KEY=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 TG_TOKEN=372106098:AAFEYFFfNuZlrAW84GBkE5mrrcxBUqeygtQpython tg_bot_no_tuning.py

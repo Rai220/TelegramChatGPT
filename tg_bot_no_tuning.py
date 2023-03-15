@@ -4,10 +4,6 @@ import time
 import tiktoken
 import os
 
-tokenizer = tiktoken.get_encoding("cl100k_base")
-
-max_history = 3500 # Hstory will be truncated after this length
-
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     print("Please set OPENAI_API_KEY environment variable")
@@ -17,6 +13,9 @@ TG_TOKEN = os.getenv("TG_TOKEN")
 if not TG_TOKEN:
     print("Please set TG_TOKEN environment variable")
     exit()
+
+tokenizer = tiktoken.get_encoding("cl100k_base")
+max_history = 3500 # History will be truncated after this length
 
 bot = telebot.TeleBot(TG_TOKEN)
 openai.api_key = OPENAI_API_KEY
