@@ -165,7 +165,7 @@ def completion():
 def chatcompletion():
     # Check token
     try:
-        if flask.request.args.get("token", None) != AUTH_TOKEN:
+        if flask.request.args.get("token", None) != token:
             return flask.jsonify({"error": "Invalid token"}), 403
         
         # Get json from body
@@ -188,4 +188,5 @@ def chatcompletion():
 if __name__ == "__main__":
     # Run bot polling in thread
     bot_thread = threading.Thread(target=bot.polling)
+    bot_thread.start()
     app.run(host="0.0.0.0", port=port)
