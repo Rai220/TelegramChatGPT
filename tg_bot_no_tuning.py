@@ -35,6 +35,9 @@ max_history = 7500 # History will be truncated after this length
 bot = telebot.TeleBot(TG_TOKEN)
 openai.api_key = OPENAI_API_KEY
 model = "gpt-4-0314"
+cheap_model = "gpt-3.5-turbo"
+
+premium_users = ["47173181"]
 
 # Load history from file
 users = {}
@@ -76,8 +79,19 @@ def _process_rq(user_id, rq):
         if rq and len(rq) > 0 and len(rq) < 100:
             log(f">>> ({user_id}) {rq}")
             user['history'].append({"role": "user", "content": rq})
+
+            prefix = ""
+            if len(user['history']) > 20 and not str(user_id) in premium_users and user.get('limit', False) != True:
+                user['limit'] = True
+                prefix = "(Вы были переключен на экономичную модель gpt-3.5-turbo. Для переключения обратитесь к @Krestnikov) "
+
             # Truncate history but save first prompt
-            while(_count_tokens(user) > max_history):
+            max = max_history
+            if user.get('limit', False):
+                max = 3500
+                model = cheap_model
+
+            while(_count_tokens(user) > max):
                 user['history'].pop(1)
 
             completion = openai.ChatCompletion.create(
@@ -86,7 +100,7 @@ def _process_rq(user_id, rq):
             log(f"<<< ({user_id}) {ans}")
             user['history'].append({"role": "assistant", "content": ans})
             user['last_prompt_time'] = time.time()
-            return ans
+            return prefix + ans
         else:
             user['last_prompt_time'] = 0
             user['last_text'] = ''
@@ -127,7 +141,8 @@ def process_message(message):
             return
 
         if len(rq) > 0:
-            ans = _process_rq(user_id, rq)
+            ans, model = _process_rq(user_id, rq)
+
             if answer_message:
                 bot.reply_to(message, ans)
             else:
