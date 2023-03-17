@@ -1,3 +1,4 @@
+import types
 import telebot
 import openai
 import time
@@ -23,6 +24,8 @@ if not TG_TOKEN:
 AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
 if not AUTH_TOKEN:
     raise ValueError("AUTH_TOKEN must be set")
+
+mynames = ["@trololobot", "@кибердед", "trololo_bot", "кибердед", "кибердед,"]
 
 port = os.environ.get("PORT", 8080)
 
@@ -81,7 +84,7 @@ def _process_rq(user_id, rq):
                 model=model, messages=user['history'], temperature=0.7)
             ans = completion['choices'][0]['message']['content']
             log(f"<<< ({user_id}) {ans}")
-            user['history'].append({"role": "user", "content": ans})
+            user['history'].append({"role": "assistant", "content": ans})
             user['last_prompt_time'] = time.time()
             return ans
         else:
@@ -104,6 +107,37 @@ def send_welcome(message):
 def process_message(message):
     try:
         user_id = str(message.from_user.id)
+        rq = ""
+        answer_message = False
+        if message.content_type != 'text':
+            return
+        if message.chat.type == 'group':
+            rq = str(message.text)
+            if rq.split()[0].lower() in mynames:
+                rq = rq[len(rq.split()[0]):]
+                answer_message = True
+            else:
+                return
+        else:
+            rq = str(message.text)
+
+        if len(rq) > 0:
+            ans = _process_rq(user_id, rq)
+            if answer_message:
+                bot.reply_to(message, ans)
+            else:
+                bot.send_message(message.chat.id, ans)
+            # Save users using utf-8 and beatur format
+            with open("users.json", "w") as f:
+                json.dump(users, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        log(f"!!! Error: {e}")
+
+# Hanle messages in group
+@bot.message_handler(content_types=['text'], func=lambda message: message.chat.type == 'group')
+def process_group_message(message):
+    try:
+        user_id = str(message.from_user.id)
         rq = str(message.text)
         ans = _process_rq(user_id, rq)
         bot.send_message(message.chat.id, ans)
@@ -112,6 +146,7 @@ def process_message(message):
             json.dump(users, f, indent=4, ensure_ascii=False)
     except Exception as e:
         log(f"!!! Error: {e}")
+
 
 @app.route("/<path:path>", methods=["GET", "POST"])
 def proxy(path):
@@ -124,7 +159,6 @@ def proxy(path):
     elif flask.request.method == "POST":
         response = openai.Requestor.request("post", path, params=flask.request.form)
     return flask.jsonify(response)
-
 
 @app.route("/completion", methods=["POST", "GET"])
 def completion():
@@ -183,7 +217,8 @@ def chatcompletion():
         return flask.jsonify(completion)
     except Exception as e:
         return flask.jsonify({"error": str(e)}), 500
-    
+
+
 # Start server
 if __name__ == "__main__":
     # Run bot polling in thread
