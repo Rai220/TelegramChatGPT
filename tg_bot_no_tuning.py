@@ -113,7 +113,8 @@ def process_message(message):
             return
         if message.chat.type == 'group':
             rq = str(message.text)
-            if rq.split()[0].lower() in mynames:
+            # Check if calling me or if it answer on my message
+            if rq.split()[0].lower() in mynames or message.reply_to_message and message.reply_to_message.from_user.username.lower() in mynames:
                 rq = rq[len(rq.split()[0]):]
                 answer_message = True
             else:
