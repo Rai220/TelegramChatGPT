@@ -78,7 +78,7 @@ def _process_rq(user_id, rq):
         #     user['last_prompt_time'] = 0
         #     user['history'] = _get_clear_history()
 
-        if rq.contains(premium_secret):
+        if premium_secret in rq:
             user['premium'] = True
             return f"Вы были переключены на premium модель {main_model}."
 
