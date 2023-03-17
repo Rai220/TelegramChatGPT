@@ -89,7 +89,10 @@ def _process_rq(user_id, rq):
             prefix = ""
             if len(user['history']) > 20 and not (str(user_id) in premium_users or user.get('premium', False)) and user.get('limit', False) != True:
                 user['limit'] = True
-                prefix = "(Вы были переключен на экономичную модель gpt-3.5-turbo. Для переключения обратитесь к @Krestnikov) "
+                prefix = "(Вы были переключены на экономичную модель gpt-3.5-turbo. Для переключения обратитесь к @Krestnikov) "
+                log(f"User {user_id} was switched to cheap model!")
+                if len(user['history']) > 50:
+                    return "Извините, вы исчерпали лимит сообщений к боту."
 
             # Truncate history but save first prompt
             max = max_history
