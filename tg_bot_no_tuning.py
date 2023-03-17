@@ -92,6 +92,7 @@ def _process_rq(user_id, rq):
                 prefix = "(Вы были переключены на экономичную модель gpt-3.5-turbo. Для переключения обратитесь к @Krestnikov) "
                 log(f"User {user_id} was switched to cheap model!")
                 if len(user['history']) > 50:
+                    log(f"User {user_id} was banned!")
                     return "Извините, вы исчерпали лимит сообщений к боту."
 
             # Truncate history but save first prompt
@@ -120,7 +121,7 @@ def _process_rq(user_id, rq):
         return "Error! Please try again later"
 
 
-@bot.message_handler(commands=['start', 'help', 'clear'])
+@bot.message_handler(commands=['secretclear'])
 def send_welcome(message):
     user = _get_user(message.from_user.id)
     user['history'] = _get_clear_history()
