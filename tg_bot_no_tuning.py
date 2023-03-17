@@ -111,7 +111,7 @@ def process_message(message):
         answer_message = False
         if message.content_type != 'text':
             return
-        if message.chat.type == 'group':
+        if message.chat.type == 'group' or message.chat.type == 'supergroup':
             rq = str(message.text)
             # Check if calling me or if it answer on my message
             if rq.split()[0].lower() in mynames:
@@ -121,8 +121,10 @@ def process_message(message):
                 answer_message = True
             else:
                 return
-        else:
+        elif message.chat.type == 'private':
             rq = str(message.text)
+        else:
+            return
 
         if len(rq) > 0:
             ans = _process_rq(user_id, rq)
