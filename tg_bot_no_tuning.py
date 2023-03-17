@@ -20,11 +20,11 @@ if not TG_TOKEN:
     print("Please set TG_TOKEN environment variable")
     exit()
 
-token = os.environ.get("TOKEN", None)
+token = os.environ.get("AUTH_TOKEN", None)
 if not token:
     raise ValueError("TOKEN must be set")
 
-port = os.environ.get("PORT", 8080)
+port = os.environ.get("AUTH_TOKEN", 8080)
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
 max_history = 7500 # History will be truncated after this length
