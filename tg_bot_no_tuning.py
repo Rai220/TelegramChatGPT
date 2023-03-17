@@ -103,8 +103,8 @@ def send_welcome(message):
 @bot.message_handler(func=lambda message: True)
 def process_message(message):
     try:
-        user_id = message.from_user.id
-        rq = message.text
+        user_id = str(message.from_user.id)
+        rq = str(message.text)
         ans = _process_rq(user_id, rq)
         bot.send_message(message.chat.id, ans)
         # Save users using utf-8 and beatur format
