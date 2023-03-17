@@ -73,7 +73,7 @@ def _process_rq(user_id, rq):
         #     user['last_prompt_time'] = 0
         #     user['history'] = _get_clear_history()
 
-        if rq and len(rq) > 0 and len(rq) < 250:
+        if rq and len(rq) > 0 and len(rq) < 2500:
             log(f">>> ({user_id}) {rq}")
             user['history'].append({"role": "user", "content": rq})
             # Truncate history but save first prompt
