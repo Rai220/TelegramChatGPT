@@ -107,9 +107,9 @@ def process_message(message):
         rq = message.text
         ans = _process_rq(user_id, rq)
         bot.send_message(message.chat.id, ans)
-        # Save users
+        # Save users using utf-8 and beatur format
         with open("users.json", "w") as f:
-            json.dump(users, f)
+            json.dump(users, f, indent=4, ensure_ascii=False)
     except Exception as e:
         log(f"!!! Error: {e}")
 
