@@ -204,7 +204,7 @@ def completion():
 def chatcompletion():
     # Check token
     try:
-        if flask.request.args.get("token", None) != token:
+        if flask.request.headers.get("token", None) != AUTH_TOKEN:
             return flask.jsonify({"error": "Invalid token"}), 403
         
         # Get json from body
