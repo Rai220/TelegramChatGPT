@@ -25,7 +25,7 @@ AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
 if not AUTH_TOKEN:
     raise ValueError("AUTH_TOKEN must be set")
 
-mynames = ["@trololobot", "@кибердед", "trololo_bot", "кибердед", "кибердед,"]
+mynames = ["@trololobot", "@кибердед", "trololo_bot", "кибердед", "кибердед,", "trololobot"]
 
 port = os.environ.get("PORT", 8080)
 
@@ -114,8 +114,10 @@ def process_message(message):
         if message.chat.type == 'group':
             rq = str(message.text)
             # Check if calling me or if it answer on my message
-            if rq.split()[0].lower() in mynames or message.reply_to_message and message.reply_to_message.from_user.username.lower() in mynames:
+            if rq.split()[0].lower() in mynames:
                 rq = rq[len(rq.split()[0]):]
+                answer_message = True
+            elif (message.reply_to_message and message.reply_to_message.from_user.username.lower() in mynames):
                 answer_message = True
             else:
                 return
