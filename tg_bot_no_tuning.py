@@ -34,7 +34,7 @@ max_history = 7500 # History will be truncated after this length
 
 bot = telebot.TeleBot(TG_TOKEN)
 openai.api_key = OPENAI_API_KEY
-model = "gpt-4-0314"
+main_model = "gpt-4-0314"
 cheap_model = "gpt-3.5-turbo"
 
 premium_users = ["47173181"]
@@ -87,6 +87,7 @@ def _process_rq(user_id, rq):
 
             # Truncate history but save first prompt
             max = max_history
+            model = main_model
             if user.get('limit', False):
                 max = 3500
                 model = cheap_model
@@ -141,7 +142,7 @@ def process_message(message):
             return
 
         if len(rq) > 0:
-            ans, model = _process_rq(user_id, rq)
+            ans = _process_rq(user_id, rq)
 
             if answer_message:
                 bot.reply_to(message, ans)
