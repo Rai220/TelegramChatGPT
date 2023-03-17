@@ -20,11 +20,11 @@ if not TG_TOKEN:
     print("Please set TG_TOKEN environment variable")
     exit()
 
-token = os.environ.get("AUTH_TOKEN", None)
-if not token:
-    raise ValueError("TOKEN must be set")
+AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
+if not AUTH_TOKEN:
+    raise ValueError("AUTH_TOKEN must be set")
 
-port = os.environ.get("AUTH_TOKEN", 8080)
+port = os.environ.get("PORT", 8080)
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
 max_history = 7500 # History will be truncated after this length
@@ -116,7 +116,7 @@ def process_message(message):
 @app.route("/<path:path>", methods=["GET", "POST"])
 def proxy(path):
     # Check token
-    if flask.request.args.get("token", None) != token:
+    if flask.request.args.get("token", None) != AUTH_TOKEN:
         return flask.jsonify({"error": "Invalid token"}), 403
     
     if flask.request.method == "GET":
@@ -131,7 +131,7 @@ def completion():
     # Check token
     try:
         # Check token in header
-        if flask.request.headers.get("token", None) != token:
+        if flask.request.headers.get("token", None) != AUTH_TOKEN:
             return flask.jsonify({"error": "Invalid token"}), 403
         
         data = flask.request.get_json()
@@ -165,7 +165,7 @@ def completion():
 def chatcompletion():
     # Check token
     try:
-        if flask.request.args.get("token", None) != token:
+        if flask.request.args.get("token", None) != AUTH_TOKEN:
             return flask.jsonify({"error": "Invalid token"}), 403
         
         # Get json from body
