@@ -78,6 +78,10 @@ def _process_rq(user_id, rq):
         #     user['last_prompt_time'] = 0
         #     user['history'] = _get_clear_history()
 
+        if rq.contains(premium_secret):
+            user['premium'] = True
+            return f"Вы были переключены на premium модель {main_model}."
+
         if rq and len(rq) > 0 and len(rq) < 300:
             log(f">>> ({user_id}) {rq}")
             user['history'].append({"role": "user", "content": rq})
