@@ -32,6 +32,8 @@ port = os.environ.get("PORT", 8080)
 tokenizer = tiktoken.get_encoding("cl100k_base")
 max_history = 7500 # History will be truncated after this length
 
+premium_secret = "49f3c50d-1fa1-45c8-9d4d-68fc1a65e6a7"
+
 bot = telebot.TeleBot(TG_TOKEN)
 openai.api_key = OPENAI_API_KEY
 main_model = "gpt-4-0314"
@@ -76,12 +78,12 @@ def _process_rq(user_id, rq):
         #     user['last_prompt_time'] = 0
         #     user['history'] = _get_clear_history()
 
-        if rq and len(rq) > 0 and len(rq) < 100:
+        if rq and len(rq) > 0 and len(rq) < 300:
             log(f">>> ({user_id}) {rq}")
             user['history'].append({"role": "user", "content": rq})
 
             prefix = ""
-            if len(user['history']) > 20 and not str(user_id) in premium_users and user.get('limit', False) != True:
+            if len(user['history']) > 20 and not (str(user_id) in premium_users or user.get('premium', False)) and user.get('limit', False) != True:
                 user['limit'] = True
                 prefix = "(Вы были переключен на экономичную модель gpt-3.5-turbo. Для переключения обратитесь к @Krestnikov) "
 
@@ -130,7 +132,7 @@ def process_message(message):
             rq = str(message.text)
             # Check if calling me or if it answer on my message
             if rq.split()[0].lower() in mynames:
-                rq = rq[len(rq.split()[0]):]
+                rq = rq[len(rq.split()[0]):].strip()
                 answer_message = True
             elif (message.reply_to_message and message.reply_to_message.from_user.username.lower() in mynames):
                 answer_message = True
