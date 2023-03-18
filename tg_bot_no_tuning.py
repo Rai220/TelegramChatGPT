@@ -1,3 +1,4 @@
+import traceback
 import types
 import telebot
 import openai
@@ -7,6 +8,9 @@ import os
 import json
 import flask
 import threading
+import sys
+from io import StringIO
+from contextlib import redirect_stdout
 
 # Proxy server for accessing OpenAI API
 app = flask.Flask(__name__)
@@ -25,12 +29,14 @@ AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
 if not AUTH_TOKEN:
     raise ValueError("AUTH_TOKEN must be set")
 
-mynames = ["@trololobot", "@кибердед", "trololo_bot", "кибердед", "кибердед,", "trololobot"]
+mynames = ["@trololobot", "@кибердед", "trololo_bot",
+           "кибердед", "кибердед,", "trololobot"]
+# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot", "когдапридетвремя,"]
 
 port = os.environ.get("PORT", 8080)
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
-max_history = 7500 # History will be truncated after this length
+max_history = 7500  # History will be truncated after this length
 
 premium_secret = "49f3c50d-1fa1-45c8-9d4d-68fc1a65e6a7"
 
@@ -47,32 +53,84 @@ if os.path.exists("users.json"):
     with open("users.json", "r") as f:
         users = json.load(f)
 
+
 def log(text):
     # Print to screen and log file
     print(text)
     with open("log.txt", "a") as f:
         # Add date to text
-        text = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()) + " " + text
+        text = time.strftime("%d.%m.%Y %H:%M:%S",
+                             time.localtime()) + " " + text
         print(text, file=f)
+
 
 def _count_tokens(user):
     return sum([len(tokenizer.encode(x['content'])) for x in user['history']])
 
 
-def _get_clear_history():
+def _get_clear_history(user_id):
     current_date = time.strftime("%d.%m.%Y", time.localtime())
-    return [{"role": "system", "content": f"Ты полезный ассистент с ИИ, который готов помочь своему пользователю. Ты даешь короткие содержательные ответы, обычно не более 100 символов. Сегодняшняя дата: {current_date}."}]
+    common_start = f"""Ты полезный ассистент с ИИ, который готов помочь своему пользователю. Ты даешь короткие содержательные ответы, обычно не более 100 символов. Сегодняшняя дата: {current_date}."""
+    if user_id not in premium_users:
+        return [{"role": "system", "content": common_start}]
+    else:
+        return [{"role": "system", "content": f"""
+Ты полезный ассистент с ИИ, который готов помочь своему пользователю.
+Ты даешь короткие содержательные ответы, обычно не более 100 символов.
+Если я попрошу тебя что-то сделать, что можно сделать с помощью программы на python, ты присылаешь мне код программы без объяснений.
+Если программа должна возвращать какой-то результат, то выводи его с помощью print().
+Затем я запущу этот код и скажу тебе результат, после чего ты сделаешь ответ из этого результата.
+Если при выполнеии кода возникнет ошибка, я тебе её пришлю и ты исправишь код. Просто пришли мне исправленный код без пояснений.
+Если ты увидишь, что результат выполнения кода не соответствует твоим ожиданиям, то просто пришли новую версию кода.
+Если тебе нужна какая-то информация, то получай её из интернета с помощью python и обрабатывай с помощью кода.
+Не используй код, который требует использование ключей для доступа к api"""}]
 
 
 def _get_user(id):
-    user = users.get(id, {'id': id, 'history': _get_clear_history(), 'last_prompt_time': 0})
+    id = str(id)
+    user = users.get(
+        id, {'id': id, 'history': _get_clear_history(id), 'last_prompt_time': 0})
     users[id] = user
     return user
 
 
-def _process_rq(user_id, rq):
+def executeCode(code, user):
     try:
+        print("Executing code:\n" + code)
+        user['last_code'] = code
+
+        f = StringIO()
+        with redirect_stdout(f):
+            exec(code)
+        res = f.getvalue()
+        # If res - array - join
+        if isinstance(res, list):
+            res = "\n".join(res)
+
+        print("Code execution result: " + res.strip())
+
+        return res, True
+    except Exception as e:
+        # Get exception message and stacktrace
+        error = "".join(traceback.format_exception_only(e)).strip()
+        error_stack = traceback.format_exc()
+        # log("Error executing code: " + error + "\n" + error_stack)
+        # if len(error_stack) < 250:
+        #     return error + "\n" + error_stack, False
+        # else:
+        return error, False
+
+
+def _process_rq(user_id, rq, deep=0):
+    try:
+        user_id = str(user_id)
         user = _get_user(user_id)
+        if not user.get(['premium']):
+            return "Прошу прощения, но у бота закончились деньги :( Попробуйте позже."
+
+        if deep >= 5:
+            return "Слишком много вложенных попыток написать программу. Дальше страшно, попробуйте спросить что-то другое."
+
         # if last prompt time > 60 minutes ago - drop context
         # if time.time() - user['last_prompt_time'] > 60*60*24:
         #     user['last_prompt_time'] = 0
@@ -82,7 +140,7 @@ def _process_rq(user_id, rq):
             user['premium'] = True
             return f"Вы были переключены на premium модель {main_model}."
 
-        if rq and len(rq) > 0 and len(rq) < 300:
+        if rq and len(rq) > 0 and len(rq) < 3000:
             log(f">>> ({user_id}) {rq}")
             user['history'].append({"role": "user", "content": rq})
 
@@ -102,16 +160,33 @@ def _process_rq(user_id, rq):
                 max = 3500
                 model = cheap_model
 
-            while(_count_tokens(user) > max):
+            while (_count_tokens(user) > max):
                 user['history'].pop(1)
 
             completion = openai.ChatCompletion.create(
                 model=model, messages=user['history'], temperature=0.7)
             ans = completion['choices'][0]['message']['content']
             log(f"<<< ({user_id}) {ans}")
+
             user['history'].append({"role": "assistant", "content": ans})
             user['last_prompt_time'] = time.time()
-            return prefix + ans
+
+            # Extract code from ```python <code> ```
+            if "```python" in ans:
+                ans = ans[ans.index("```python") + 9:]
+                ans = ans[:ans.index("```")]
+            ans = ans.strip()
+
+            if ans.startswith("import ") or ans.startswith("from ") or ans.startswith("def ") or ans.startswith("class ") or ans.startswith("print") or ans.startswith("for"):
+                ans, res = executeCode(ans, user)
+                if res:
+                    ans = "Я запустил код и получил результат: " + ans
+                    return _process_rq(user_id, ans, deep + 1)
+                else:
+                    ans = "Я запустил код и получил ошибку: " + ans
+                    return _process_rq(user_id, ans, deep + 1)
+            else:
+                return prefix + ans
         else:
             user['last_prompt_time'] = 0
             user['last_text'] = ''
@@ -125,7 +200,13 @@ def _process_rq(user_id, rq):
 def send_welcome(message):
     user = _get_user(message.from_user.id)
     user['history'] = _get_clear_history()
-    bot.reply_to(message, f"Started! (History cleared). Using model {model}")
+    bot.reply_to(message, f"Started! (History cleared). Using model {main_model}")
+
+@bot.message_handler(commands=['code'])
+def get_code(message):
+    user = _get_user(message.from_user.id)
+    code = user.get('last_code', '')
+    bot.reply_to(message, f"Для ответа на ваш вопрос я написал следующий код:\n{code}")
 
 
 @bot.message_handler(func=lambda message: True)
@@ -152,6 +233,10 @@ def process_message(message):
             return
 
         if len(rq) > 0:
+            if 'покажи код' in rq:
+                get_code(message)
+                return
+            
             ans = _process_rq(user_id, rq)
 
             if answer_message:
@@ -165,6 +250,8 @@ def process_message(message):
         log(f"!!! Error: {e}")
 
 # Hanle messages in group
+
+
 @bot.message_handler(content_types=['text'], func=lambda message: message.chat.type == 'group')
 def process_group_message(message):
     try:
@@ -184,12 +271,15 @@ def proxy(path):
     # Check token
     if flask.request.args.get("token", None) != AUTH_TOKEN:
         return flask.jsonify({"error": "Invalid token"}), 403
-    
+
     if flask.request.method == "GET":
-        response = openai.Requestor.request("get", path, params=flask.request.args)
+        response = openai.Requestor.request(
+            "get", path, params=flask.request.args)
     elif flask.request.method == "POST":
-        response = openai.Requestor.request("post", path, params=flask.request.form)
+        response = openai.Requestor.request(
+            "post", path, params=flask.request.form)
     return flask.jsonify(response)
+
 
 @app.route("/completion", methods=["POST", "GET"])
 def completion():
@@ -198,7 +288,7 @@ def completion():
         # Check token in header
         if flask.request.headers.get("token", None) != AUTH_TOKEN:
             return flask.jsonify({"error": "Invalid token"}), 403
-        
+
         data = flask.request.get_json()
         if not data:
             return flask.jsonify({"error": "No json data"}), 400
@@ -206,12 +296,12 @@ def completion():
         prompt = data.get("prompt", None)
         if not prompt:
             return flask.jsonify({"error": "Prompt must be set"}), 400
-        
+
         stop = data.get("stop", ['###'])
         engine = data.get("engine", "text-davinci-003")
         max_tokens = data.get("max_tokens", 150)
         temperature = data.get("temperature", 0.9)
-        
+
         response = openai.Completion.create(
             engine=engine,
             prompt=prompt,
@@ -224,7 +314,7 @@ def completion():
         return flask.jsonify(response)
     except Exception as e:
         return flask.jsonify({"error": str(e)}), 500
-    
+
 
 @app.route("/chatcompletion", methods=["POST", "GET"])
 def chatcompletion():
@@ -232,17 +322,17 @@ def chatcompletion():
     try:
         if flask.request.headers.get("token", None) != AUTH_TOKEN:
             return flask.jsonify({"error": "Invalid token"}), 403
-        
+
         # Get json from body
         data = flask.request.get_json()
         if not data:
             return flask.jsonify({"error": "No json data"}), 400
-        
+
         model = data.get("model", "gpt-3.5-turbo-0301")
         max_tokens = data.get("max_tokens", 150)
         temperature = data.get("temperature", 0.9)
         messages = data.get("messages", None)
-        
+
         completion = openai.ChatCompletion.create(
             model=model, messages=messages, temperature=temperature, max_tokens=max_tokens)
         return flask.jsonify(completion)

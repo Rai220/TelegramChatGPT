@@ -4,3 +4,7 @@ googletrans==3.1.0a0
 pandas==1.5.3
 tiktoken==0.3.1
 flask==2.2.3
+
+# For code self exec
+beautifulsoup4==4.11.2
+lxml==4.9.2
