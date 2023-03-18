@@ -127,6 +127,7 @@ def _process_rq(user_id, rq, deep=0):
         user_id = str(user_id)
         user = _get_user(user_id)
         if not user.get('premium', None):
+            log(f"User {user_id} is not premium and run out of money.")
             return "Прошу прощения, но у бота закончились деньги :( Попробуйте позже."
 
         if deep >= 5:
