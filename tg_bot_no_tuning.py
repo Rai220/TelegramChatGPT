@@ -126,9 +126,13 @@ def _process_rq(user_id, rq, deep=0):
     try:
         user_id = str(user_id)
         user = _get_user(user_id)
+        if PREMIUM_SECRET in rq:
+            user['premium'] = True
+            return f"Вы были переключены на premium модель {main_model}."
+
         if not user.get('premium', None):
             log(f"User {user_id} is not premium and run out of money.")
-            return "Прошу прощения, но у бота закончились деньги :( Попробуйте позже."
+            return "Прошу прощения, но у бота закончились деньги :( Попробуйте позже или скажите код для премиум-доступа."
 
         if deep >= 5:
             return "Слишком много вложенных попыток написать программу. Дальше страшно, попробуйте спросить что-то другое."
@@ -137,10 +141,6 @@ def _process_rq(user_id, rq, deep=0):
         # if time.time() - user['last_prompt_time'] > 60*60*24:
         #     user['last_prompt_time'] = 0
         #     user['history'] = _get_clear_history()
-
-        if PREMIUM_SECRET in rq:
-            user['premium'] = True
-            return f"Вы были переключены на premium модель {main_model}."
 
         if rq and len(rq) > 0 and len(rq) < 3000:
             log(f">>> ({user_id}) {rq}")
