@@ -29,6 +29,8 @@ AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
 if not AUTH_TOKEN:
     raise ValueError("AUTH_TOKEN must be set")
 
+PREMIUM_SECRET = os.environ.get("PREMIUM_SECRET", "49f3c50d-1fa1-45c8-9d4d-68fc1a65e6a7")
+
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
 # mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot", "когдапридетвремя,"]
@@ -38,14 +40,10 @@ port = os.environ.get("PORT", 8080)
 tokenizer = tiktoken.get_encoding("cl100k_base")
 max_history = 7500  # History will be truncated after this length
 
-premium_secret = "49f3c50d-1fa1-45c8-9d4d-68fc1a65e6a7"
-
 bot = telebot.TeleBot(TG_TOKEN)
 openai.api_key = OPENAI_API_KEY
 main_model = "gpt-4-0314"
 cheap_model = "gpt-3.5-turbo"
-
-premium_users = ["47173181"]
 
 # Load history from file
 users = {}
@@ -54,9 +52,12 @@ if os.path.exists("users.json"):
         users = json.load(f)
 
 
-def log(text):
+# log with optional exception
+def log(text, e=None):
     # Print to screen and log file
     print(text)
+    if e and isinstance(e, Exception):
+        print(traceback.format_exc())
     with open("log.txt", "a") as f:
         # Add date to text
         text = time.strftime("%d.%m.%Y %H:%M:%S",
@@ -71,10 +72,10 @@ def _count_tokens(user):
 def _get_clear_history(user_id):
     current_date = time.strftime("%d.%m.%Y", time.localtime())
     common_start = f"""Ты полезный ассистент с ИИ, который готов помочь своему пользователю. Ты даешь короткие содержательные ответы, обычно не более 100 символов. Сегодняшняя дата: {current_date}."""
-    if user_id not in premium_users:
-        return [{"role": "system", "content": common_start}]
-    else:
-        return [{"role": "system", "content": f"""
+    # if user_id not in premium_users:
+    #     return [{"role": "system", "content": common_start}]
+    # else:
+    return [{"role": "system", "content": f"""
 Ты полезный ассистент с ИИ, который готов помочь своему пользователю.
 Ты даешь короткие содержательные ответы, обычно не более 100 символов.
 Если я попрошу тебя что-то сделать, что можно сделать с помощью программы на python, ты присылаешь мне код программы без объяснений.
@@ -125,7 +126,7 @@ def _process_rq(user_id, rq, deep=0):
     try:
         user_id = str(user_id)
         user = _get_user(user_id)
-        if not user.get(['premium']):
+        if not user.get('premium', None):
             return "Прошу прощения, но у бота закончились деньги :( Попробуйте позже."
 
         if deep >= 5:
@@ -136,7 +137,7 @@ def _process_rq(user_id, rq, deep=0):
         #     user['last_prompt_time'] = 0
         #     user['history'] = _get_clear_history()
 
-        if premium_secret in rq:
+        if PREMIUM_SECRET in rq:
             user['premium'] = True
             return f"Вы были переключены на premium модель {main_model}."
 
@@ -145,13 +146,13 @@ def _process_rq(user_id, rq, deep=0):
             user['history'].append({"role": "user", "content": rq})
 
             prefix = ""
-            if len(user['history']) > 20 and not (str(user_id) in premium_users or user.get('premium', False)) and user.get('limit', False) != True:
-                user['limit'] = True
-                prefix = "(Вы были переключены на экономичную модель gpt-3.5-turbo. Для переключения обратитесь к @Krestnikov) "
-                log(f"User {user_id} was switched to cheap model!")
-                if len(user['history']) > 50:
-                    log(f"User {user_id} was banned!")
-                    return "Извините, вы исчерпали лимит сообщений к боту."
+            # if len(user['history']) > 20 and not (user.get('premium', False)) and user.get('limit', False) != True:
+            #     user['limit'] = True
+            #     prefix = "(Вы были переключены на экономичную модель gpt-3.5-turbo. Для переключения обратитесь к @Krestnikov) "
+            #     log(f"User {user_id} was switched to cheap model!")
+            #     if len(user['history']) > 50:
+            #         log(f"User {user_id} was banned!")
+            #         return "Извините, вы исчерпали лимит сообщений к боту."
 
             # Truncate history but save first prompt
             max = max_history
@@ -192,7 +193,7 @@ def _process_rq(user_id, rq, deep=0):
             user['last_text'] = ''
             return "!!! Error! Please use simple short texts"
     except Exception as e:
-        log(f"!!! Error: {e}")
+        log(f"!!! Error: {e}", e)
         return "Error! Please try again later"
 
 
@@ -247,7 +248,7 @@ def process_message(message):
             with open("users.json", "w") as f:
                 json.dump(users, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        log(f"!!! Error: {e}")
+        log(f"!!! Error: {e}", e)
 
 # Hanle messages in group
 
@@ -263,7 +264,7 @@ def process_group_message(message):
         with open("users.json", "w") as f:
             json.dump(users, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        log(f"!!! Error: {e}")
+        log(f"!!! Error: {e}", e)
 
 
 @app.route("/<path:path>", methods=["GET", "POST"])
