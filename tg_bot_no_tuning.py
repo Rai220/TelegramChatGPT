@@ -12,6 +12,8 @@ import sys
 from io import StringIO
 from contextlib import redirect_stdout
 
+import gpt_utils
+
 # Proxy server for accessing OpenAI API
 app = flask.Flask(__name__)
 
@@ -29,11 +31,13 @@ AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
 if not AUTH_TOKEN:
     raise ValueError("AUTH_TOKEN must be set")
 
-PREMIUM_SECRET = os.environ.get("PREMIUM_SECRET", "49f3c50d-1fa1-45c8-9d4d-68fc1a65e6a7")
+PREMIUM_SECRET = os.environ.get(
+    "PREMIUM_SECRET", "49f3c50d-1fa1-45c8-9d4d-68fc1a65e6a7")
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
-# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot", "когдапридетвремя,"]
+# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
+#            "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
 port = os.environ.get("PORT", 8080)
 
@@ -84,7 +88,10 @@ def _get_clear_history(user_id):
 Если при выполнеии кода возникнет ошибка, я тебе её пришлю и ты исправишь код. Просто пришли мне исправленный код без пояснений.
 Если ты увидишь, что результат выполнения кода не соответствует твоим ожиданиям, то просто пришли новую версию кода.
 Если тебе нужна какая-то информация, то получай её из интернета с помощью python и обрабатывай с помощью кода.
-Не используй код, который требует использование ключей для доступа к api"""}]
+Не используй код, который требует использование ключей для доступа к api.
+Для написания кода используй специальную библиотеку, которая называется gpt_utils. Она содержит следующие функции:
+gpt_utils.get_text_from_url(url) - возвращает текст, содержащийся на странице по ссылке url
+gpt_utils.send_message_to_all(text) - отправляет сообщение всем пользователям"""}]
 
 
 def _get_user(id):
@@ -102,7 +109,7 @@ def executeCode(code, user):
 
         f = StringIO()
         with redirect_stdout(f):
-            exec(code)
+            exec(code, globals())
         res = f.getvalue()
         # If res - array - join
         if isinstance(res, list):
@@ -115,11 +122,20 @@ def executeCode(code, user):
         # Get exception message and stacktrace
         error = "".join(traceback.format_exception_only(e)).strip()
         error_stack = traceback.format_exc()
+
         # log("Error executing code: " + error + "\n" + error_stack)
-        # if len(error_stack) < 250:
-        #     return error + "\n" + error_stack, False
-        # else:
         return error, False
+
+
+def _is_python_code(ans):
+    if ans.startswith("gpt_utils"):
+        return True
+    if ans.startswith("import ") or ans.startswith("from ") or ans.startswith("def ") or ans.startswith("class ") or ans.startswith("print") or ans.startswith("for"):
+        return True
+    # This also looks like python code
+    if (ans.split(" ")[0].isalpha() or ans.split(".")[0].isalpha()) and ans.contains("print("):
+        return True
+    return False
 
 
 def _process_rq(user_id, rq, deep=0):
@@ -179,13 +195,17 @@ def _process_rq(user_id, rq, deep=0):
                 ans = ans[:ans.index("```")]
             ans = ans.strip()
 
-            if ans.startswith("import ") or ans.startswith("from ") or ans.startswith("def ") or ans.startswith("class ") or ans.startswith("print") or ans.startswith("for"):
+            if _is_python_code(ans):
                 ans, res = executeCode(ans, user)
                 if res:
+                    # Код завершился без ошибок
+                    if ans == None or ans == "":
+                        return None
                     ans = "Я запустил код и получил результат: " + ans
                     return _process_rq(user_id, ans, deep + 1)
                 else:
-                    ans = "Я запустил код и получил ошибку: " + ans
+                    ans = "Я запустил код и получил ошибку: " + ans + \
+                        ". Попробуй исправить код и пришли его снова целиком. Не пиши ничего кроме кода."
                     return _process_rq(user_id, ans, deep + 1)
             else:
                 return prefix + ans
@@ -193,22 +213,29 @@ def _process_rq(user_id, rq, deep=0):
             user['last_prompt_time'] = 0
             user['last_text'] = ''
             return "!!! Error! Please use simple short texts"
+    except openai.error.RateLimitError as limitE:
+        log(f"!!! Error: {limitE}", limitE)
+        return "OpenAI пишет, что мы вышли за rete limit :( Придется попробовать позже."
     except Exception as e:
         log(f"!!! Error: {e}", e)
         return "Error! Please try again later"
 
 
-@bot.message_handler(commands=['secretclear'])
+@bot.message_handler(commands=['clear'])
 def send_welcome(message):
-    user = _get_user(message.from_user.id)
-    user['history'] = _get_clear_history()
-    bot.reply_to(message, f"Started! (History cleared). Using model {main_model}")
+    user_id = str(message.from_user.id)
+    user = _get_user(user_id)
+    user['history'] = _get_clear_history(user_id)
+    bot.reply_to(
+        message, f"Started! (History cleared). Using model {main_model}")
+
 
 @bot.message_handler(commands=['code'])
 def get_code(message):
     user = _get_user(message.from_user.id)
     code = user.get('last_code', '')
-    bot.reply_to(message, f"Для ответа на ваш вопрос я написал следующий код:\n{code}")
+    bot.reply_to(
+        message, f"Для ответа на ваш вопрос я написал следующий код:\n{code}")
 
 
 @bot.message_handler(func=lambda message: True)
@@ -235,11 +262,13 @@ def process_message(message):
             return
 
         if len(rq) > 0:
-            if 'покажи код' in rq:
+            if 'покажи код' in rq.lower():
                 get_code(message)
                 return
-            
+
             ans = _process_rq(user_id, rq)
+            if ans == None or ans == "":
+                return
 
             if answer_message:
                 bot.reply_to(message, ans)
@@ -345,6 +374,8 @@ def chatcompletion():
 # Start server
 if __name__ == "__main__":
     # Run bot polling in thread
+    gpt_utils.bot = bot
+
     bot_thread = threading.Thread(target=bot.polling)
     bot_thread.start()
     app.run(host="0.0.0.0", port=port)
