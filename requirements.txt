@@ -8,6 +8,7 @@ flask==2.2.3
 # For code self exec
 beautifulsoup4==4.11.2
 lxml==4.9.2
-urllib==1.26.14
+urllib==1.26.15
 scipy==1.10.1
 trafilatura==1.4.1
+simplegmail==4.1.1

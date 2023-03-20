@@ -1,16 +1,14 @@
-import traceback
-import types
-import telebot
-import openai
-import time
-import tiktoken
-import os
 import json
-import flask
-import threading
-import sys
-from io import StringIO
+import os
+import time
+import traceback
 from contextlib import redirect_stdout
+from io import StringIO
+
+import flask
+import openai
+import telebot
+import tiktoken
 
 import gpt_utils
 
@@ -36,8 +34,8 @@ PREMIUM_SECRET = os.environ.get(
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
-# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
-#            "когдапридетвремя,", "времяпришло", "времяпришло,"]
+mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
+           "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
 port = os.environ.get("PORT", 8080)
 
@@ -49,7 +47,7 @@ openai.api_key = OPENAI_API_KEY
 main_model = "gpt-4-0314"
 cheap_model = "gpt-3.5-turbo"
 
-# Load history from file
+# Load chats history from file
 users = {}
 if os.path.exists("users.json"):
     with open("users.json", "r") as f:
@@ -57,7 +55,7 @@ if os.path.exists("users.json"):
 
 
 # log with optional exception
-def log(text, e=None):
+def _log(text, e=None):
     # Print to screen and log file
     print(text)
     if e and isinstance(e, Exception):
@@ -122,18 +120,17 @@ def executeCode(code, user):
         # Get exception message and stacktrace
         error = "".join(traceback.format_exception_only(e)).strip()
         error_stack = traceback.format_exc()
-
-        # log("Error executing code: " + error + "\n" + error_stack)
         return error, False
 
 
 def _is_python_code(ans):
+    ans = str(ans)
     if ans.startswith("gpt_utils"):
         return True
     if ans.startswith("import ") or ans.startswith("from ") or ans.startswith("def ") or ans.startswith("class ") or ans.startswith("print") or ans.startswith("for"):
         return True
     # This also looks like python code
-    if (ans.split(" ")[0].isalpha() or ans.split(".")[0].isalpha()) and ans.contains("print("):
+    if (ans.split(" ")[0].isalpha() or ans.split(".")[0].isalpha()) and "print(" in ans:
         return True
     return False
 
@@ -147,19 +144,19 @@ def _process_rq(user_id, rq, deep=0):
             return f"Вы были переключены на premium модель {main_model}."
 
         if not user.get('premium', None):
-            log(f"User {user_id} is not premium and run out of money.")
+            _log(f"User {user_id} is not premium and run out of money.")
             return "Прошу прощения, но у бота закончились деньги :( Попробуйте позже или скажите код для премиум-доступа."
 
         if deep >= 5:
             return "Слишком много вложенных попыток написать программу. Дальше страшно, попробуйте спросить что-то другое."
 
-        # if last prompt time > 60 minutes ago - drop context
-        # if time.time() - user['last_prompt_time'] > 60*60*24:
-        #     user['last_prompt_time'] = 0
-        #     user['history'] = _get_clear_history()
+        # Drop history if user is inactive for 1 hour
+        if time.time() - user['last_prompt_time'] > 60*60:
+            user['last_prompt_time'] = 0
+            user['history'] = _get_clear_history(user_id)
 
         if rq and len(rq) > 0 and len(rq) < 3000:
-            log(f">>> ({user_id}) {rq}")
+            _log(f">>> ({user_id}) {rq}")
             user['history'].append({"role": "user", "content": rq})
 
             prefix = ""
@@ -184,7 +181,7 @@ def _process_rq(user_id, rq, deep=0):
             completion = openai.ChatCompletion.create(
                 model=model, messages=user['history'], temperature=0.7)
             ans = completion['choices'][0]['message']['content']
-            log(f"<<< ({user_id}) {ans}")
+            _log(f"<<< ({user_id}) {ans}")
 
             user['history'].append({"role": "assistant", "content": ans})
             user['last_prompt_time'] = time.time()
@@ -212,12 +209,12 @@ def _process_rq(user_id, rq, deep=0):
         else:
             user['last_prompt_time'] = 0
             user['last_text'] = ''
-            return "!!! Error! Please use simple short texts"
+            return "Error! Please use simple short texts"
     except openai.error.RateLimitError as limitE:
-        log(f"!!! Error: {limitE}", limitE)
+        _log(f"Error: {limitE}", limitE)
         return "OpenAI пишет, что мы вышли за rete limit :( Придется попробовать позже."
     except Exception as e:
-        log(f"!!! Error: {e}", e)
+        _log(f"!!! Error: {e}", e)
         return "Error! Please try again later"
 
 
@@ -278,9 +275,7 @@ def process_message(message):
             with open("users.json", "w") as f:
                 json.dump(users, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        log(f"!!! Error: {e}", e)
-
-# Hanle messages in group
+        _log(f"!!! Error: {e}", e)
 
 
 @bot.message_handler(content_types=['text'], func=lambda message: message.chat.type == 'group')
@@ -294,88 +289,9 @@ def process_group_message(message):
         with open("users.json", "w") as f:
             json.dump(users, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        log(f"!!! Error: {e}", e)
+        _log(f"!!! Error: {e}", e)
 
 
-@app.route("/<path:path>", methods=["GET", "POST"])
-def proxy(path):
-    # Check token
-    if flask.request.args.get("token", None) != AUTH_TOKEN:
-        return flask.jsonify({"error": "Invalid token"}), 403
-
-    if flask.request.method == "GET":
-        response = openai.Requestor.request(
-            "get", path, params=flask.request.args)
-    elif flask.request.method == "POST":
-        response = openai.Requestor.request(
-            "post", path, params=flask.request.form)
-    return flask.jsonify(response)
-
-
-@app.route("/completion", methods=["POST", "GET"])
-def completion():
-    # Check token
-    try:
-        # Check token in header
-        if flask.request.headers.get("token", None) != AUTH_TOKEN:
-            return flask.jsonify({"error": "Invalid token"}), 403
-
-        data = flask.request.get_json()
-        if not data:
-            return flask.jsonify({"error": "No json data"}), 400
-
-        prompt = data.get("prompt", None)
-        if not prompt:
-            return flask.jsonify({"error": "Prompt must be set"}), 400
-
-        stop = data.get("stop", ['###'])
-        engine = data.get("engine", "text-davinci-003")
-        max_tokens = data.get("max_tokens", 150)
-        temperature = data.get("temperature", 0.9)
-
-        response = openai.Completion.create(
-            engine=engine,
-            prompt=prompt,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            top_p=1,
-            best_of=1,
-            stop=stop
-        )
-        return flask.jsonify(response)
-    except Exception as e:
-        return flask.jsonify({"error": str(e)}), 500
-
-
-@app.route("/chatcompletion", methods=["POST", "GET"])
-def chatcompletion():
-    # Check token
-    try:
-        if flask.request.headers.get("token", None) != AUTH_TOKEN:
-            return flask.jsonify({"error": "Invalid token"}), 403
-
-        # Get json from body
-        data = flask.request.get_json()
-        if not data:
-            return flask.jsonify({"error": "No json data"}), 400
-
-        model = data.get("model", "gpt-3.5-turbo-0301")
-        max_tokens = data.get("max_tokens", 150)
-        temperature = data.get("temperature", 0.9)
-        messages = data.get("messages", None)
-
-        completion = openai.ChatCompletion.create(
-            model=model, messages=messages, temperature=temperature, max_tokens=max_tokens)
-        return flask.jsonify(completion)
-    except Exception as e:
-        return flask.jsonify({"error": str(e)}), 500
-
-
-# Start server
 if __name__ == "__main__":
-    # Run bot polling in thread
     gpt_utils.bot = bot
-
-    bot_thread = threading.Thread(target=bot.polling)
-    bot_thread.start()
-    app.run(host="0.0.0.0", port=port)
+    bot.polling()

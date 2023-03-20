@@ -133,3 +133,5 @@ dmypy.json
 .DS_Store
 log.txt
 users.json
+
+*.json
