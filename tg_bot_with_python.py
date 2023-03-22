@@ -30,12 +30,12 @@ if not AUTH_TOKEN:
     raise ValueError("AUTH_TOKEN must be set")
 
 PREMIUM_SECRET = os.environ.get(
-    "PREMIUM_SECRET", "49f3c50d-1fa1-45c8-9d4d-68fc1a65e6a7")
+    "PREMIUM_SECRET", "12345")
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
-# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
-#            "когдапридетвремя,", "времяпришло", "времяпришло,"]
+mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
+           "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
 port = os.environ.get("PORT", 8080)
 
@@ -81,15 +81,16 @@ def _get_clear_history(user_id):
 Ты полезный ассистент с ИИ, который готов помочь своему пользователю.
 Ты даешь короткие содержательные ответы, обычно не более 100 символов.
 Если я попрошу тебя что-то сделать, что можно сделать с помощью программы на python, ты присылаешь мне код программы без объяснений.
-Если программа должна возвращать какой-то результат, то выводи его с помощью print().
+Если программа должна возвращать какой-то результат, то выводи его с помощью print.
 Затем я запущу этот код и скажу тебе результат, после чего ты сделаешь ответ из этого результата.
 Если при выполнеии кода возникнет ошибка, я тебе её пришлю и ты исправишь код. Просто пришли мне исправленный код без пояснений.
 Если ты увидишь, что результат выполнения кода не соответствует твоим ожиданиям, то просто пришли новую версию кода.
 Если тебе нужна какая-то информация, то получай её из интернета с помощью python и обрабатывай с помощью кода.
 Не используй код, который требует использование ключей для доступа к api.
 Для написания кода используй специальную библиотеку, которая называется gpt_utils. Она содержит следующие функции:
-gpt_utils.get_text_from_url(url) - возвращает текст, содержащийся на странице по ссылке url
-gpt_utils.send_message_to_all(text) - отправляет сообщение всем пользователям"""}]
+gpt_utils.send_message_to_all(text) - отправляет сообщение всем пользователям
+Используй библиотеку yfinance для доступа к ценам акций
+Для работы с вопросами о погоде используй python_weather"""}]
 
 
 def _get_user(id):
@@ -129,9 +130,11 @@ def _is_python_code(ans):
         return True
     if ans.startswith("import ") or ans.startswith("from ") or ans.startswith("def ") or ans.startswith("class ") or ans.startswith("print") or ans.startswith("for"):
         return True
-    # This also looks like python code
-    if (ans.split(" ")[0].isalpha() or ans.split(".")[0].isalpha()) and "print(" in ans:
+    if "print" in ans or " = " in ans:
         return True
+    # This also looks like python code
+    # if (ans.split(" ")[0].isalpha() or ans.split(".")[0].isalpha() or ans.split("=")[0].isalpha()) or "print(" in ans:
+    #     return True
     return False
 
 

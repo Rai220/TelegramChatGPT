@@ -13,13 +13,7 @@ CHANNEL_ID = -925069924
 bot = None
 # gmail = Gmail()
 
-
-def get_text_from_url(url):
-    downloaded = trafilatura.fetch_url(url)
-    res = trafilatura.extract(downloaded)
-    print(f"Text downloaded from {url}:/n{res}")
-    return res
-
+import yfinance
 
 def send_message_to_all(text):
     bot.send_message(chat_id=CHANNEL_ID, text=text)
