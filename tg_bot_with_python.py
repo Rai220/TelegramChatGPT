@@ -34,8 +34,8 @@ PREMIUM_SECRET = os.environ.get(
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
-mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
-           "когдапридетвремя,", "времяпришло", "времяпришло,"]
+# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
+#           "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
 port = os.environ.get("PORT", 8080)
 
