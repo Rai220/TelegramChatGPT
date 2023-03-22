@@ -34,7 +34,7 @@ For russian version:
 python tg_bot_rus.py
 ```
 
-# Free chat with GPT-3.5
+# Free chat with GPT-4 and code runtime execution
 ```
-OPENAI_API_KEY=<YOUR_OPENAI_KEY> TG_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN> python tg_bot_no_tuning.py
+OPENAI_API_KEY=<YOUR_OPENAI_KEY> TG_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN> tg_bot_with_python.py
 ```
