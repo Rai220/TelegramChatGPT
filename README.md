@@ -1,7 +1,9 @@
 # TelegramChatGPT
 Personal telegram chat-bot based on OpenAI GPT-3 finetuning.
 
-This code from article: https://habr.com/ru/post/712534/ (Transfering our points of view to a chat bot based on GPT-3)
+This code from articles: 
+1. https://habr.com/ru/post/712534/ (Transfering our points of view to a chat bot based on GPT-3)
+2. https://habr.com/ru/post/724012/ (GPT-3 code generation and runtime execution)
 
 # Setup
 1. Install requirements
