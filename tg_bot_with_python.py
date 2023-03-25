@@ -28,10 +28,6 @@ if not TG_TOKEN:
     print("Please set TG_TOKEN environment variable")
     exit()
 
-AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
-if not AUTH_TOKEN:
-    raise ValueError("AUTH_TOKEN must be set")
-
 # Generate random secret
 PREMIUM_SECRET = os.environ.get(
     "PREMIUM_SECRET", uuid.uuid4())
