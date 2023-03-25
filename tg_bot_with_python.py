@@ -250,7 +250,9 @@ def process_message(message):
                 return
         elif message.chat.type == 'private':
             rq = str(message.text)
-            return "Сейчас я не отвечаю в личных сообщениях, пишите в разрешенные группы"
+            ans = "Сейчас я не отвечаю в личных сообщениях, пишите в разрешенные группы"
+            bot.reply_to(message, ans)
+            return
         else:
             return
 
