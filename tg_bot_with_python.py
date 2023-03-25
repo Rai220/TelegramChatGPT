@@ -117,17 +117,18 @@ def executeCode(code, user):
 
 
 def _is_python_code(ans):
-    ans = str(ans)
-    if ans.startswith("gpt_utils"):
-        return True
-    if ans.startswith("import ") or ans.startswith("from ") or ans.startswith("def ") or ans.startswith("class ") or ans.startswith("print") or ans.startswith("for"):
-        return True
-    if "print" in ans or " = " in ans:
-        return True
-    # This also looks like python code
-    # if (ans.split(" ")[0].isalpha() or ans.split(".")[0].isalpha() or ans.split("=")[0].isalpha()) or "print(" in ans:
-    #     return True
     return False
+    # ans = str(ans)
+    # if ans.startswith("gpt_utils"):
+    #     return True
+    # if ans.startswith("import ") or ans.startswith("from ") or ans.startswith("def ") or ans.startswith("class ") or ans.startswith("print") or ans.startswith("for"):
+    #     return True
+    # if "print" in ans or " = " in ans:
+    #     return True
+    # # This also looks like python code
+    # # if (ans.split(" ")[0].isalpha() or ans.split(".")[0].isalpha() or ans.split("=")[0].isalpha()) or "print(" in ans:
+    # #     return True
+    # return False
 
 
 def _process_rq(user_id, rq, deep=0):
