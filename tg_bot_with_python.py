@@ -11,6 +11,9 @@ import telebot
 import tiktoken
 
 import gpt_utils
+import random
+import uuid
+
 
 # Proxy server for accessing OpenAI API
 app = flask.Flask(__name__)
@@ -29,8 +32,10 @@ AUTH_TOKEN = os.environ.get("AUTH_TOKEN", None)
 if not AUTH_TOKEN:
     raise ValueError("AUTH_TOKEN must be set")
 
+# Generate random secret
 PREMIUM_SECRET = os.environ.get(
-    "PREMIUM_SECRET", "12345")
+    "PREMIUM_SECRET", uuid.uuid4())
+print(f"Bot secret: {PREMIUM_SECRET}")
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
