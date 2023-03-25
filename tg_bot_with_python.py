@@ -240,6 +240,7 @@ def process_message(message):
             return
         if message.chat.type == 'group' or message.chat.type == 'supergroup':
             rq = str(message.text)
+
             # Check if calling me or if it answer on my message
             if rq.split()[0].lower() in mynames:
                 rq = rq[len(rq.split()[0]):].strip()
@@ -248,7 +249,7 @@ def process_message(message):
                 answer_message = True
             else:
                 return
-        elif message.chat.type == 'private':
+        elif message.chat.type == 'private' and not PREMIUM_SECRET in rq:
             rq = str(message.text)
             ans = "Сейчас я не отвечаю в личных сообщениях, пишите в разрешенные группы"
             bot.reply_to(message, ans)
@@ -257,9 +258,9 @@ def process_message(message):
             return
 
         if len(rq) > 0:
-            if 'покажи код' in rq.lower():
-                get_code(message)
-                return
+            # if 'покажи код' in rq.lower():
+            #     get_code(message)
+            #     return
 
             ans = _process_rq(user_id, rq)
             if ans == None or ans == "":
