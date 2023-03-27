@@ -279,7 +279,7 @@ def process_message(message):
             if answer_message:
                 if chat_id not in ALLOWED_GROUPS:
                     bot.reply_to(
-                        message, "Я не отвечаю в этой группе. Обратитесь к @Krestnikov")
+                        message, f"Я не отвечаю в этой группе. Обратитесь к @Krestnikov, чтобы он добавил чат {chat_id} в базу")
                     return
         elif message.chat.type == 'private' and not PREMIUM_SECRET in rq:
             rq = str(message.text)
