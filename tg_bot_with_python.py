@@ -35,10 +35,10 @@ print(f"Bot secret: {PREMIUM_SECRET}")
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
-# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
-#           "когдапридетвремя,", "времяпришло", "времяпришло,"]
+mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
+           "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
-ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520:"]
+ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520"]
 
 port = os.environ.get("PORT", 8080)
 
@@ -271,14 +271,16 @@ def process_message(message):
             if rq.split()[0].lower() in mynames:
                 rq = rq[len(rq.split()[0]):].strip()
                 answer_message = True
-            elif (message.reply_to_message and message.reply_to_message.from_user.username.lower() in mynames):
+            elif (message.reply_to_message):
                 answer_message = True
+            else:
+                return
+
+            if answer_message:
                 if chat_id not in ALLOWED_GROUPS:
                     bot.reply_to(
                         message, "Я не отвечаю в этой группе. Обратитесь к @Krestnikov")
                     return
-            else:
-                return
         elif message.chat.type == 'private' and not PREMIUM_SECRET in rq:
             rq = str(message.text)
             ans = "Сейчас я не отвечаю в личных сообщениях, пишите в разрешенные группы"
@@ -293,7 +295,8 @@ def process_message(message):
             #     return
 
             username = str(message.from_user.username)
-            ans = _process_rq(user_id, rq, deep=0, chat_id=chat_id, username=username)
+            ans = _process_rq(user_id, rq, deep=0,
+                              chat_id=chat_id, username=username)
             if ans == None or ans == "":
                 return
 
