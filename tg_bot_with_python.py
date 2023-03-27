@@ -38,7 +38,7 @@ mynames = ["@trololobot", "@кибердед", "trololo_bot",
 # mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
 #           "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
-ALLOWED_GROUPS = ["-925069924", "-1001786266241"]
+ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520:"]
 
 port = os.environ.get("PORT", 8080)
 
