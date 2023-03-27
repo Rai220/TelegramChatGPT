@@ -251,6 +251,7 @@ def process_message(message):
         answer_message = False
         if message.content_type != 'text':
             return
+        chat_id = str(message.chat.id)
         if message.chat.type == 'group' or message.chat.type == 'supergroup':
             rq = str(message.text)
 
@@ -260,7 +261,6 @@ def process_message(message):
                 answer_message = True
             elif (message.reply_to_message and message.reply_to_message.from_user.username.lower() in mynames):
                 answer_message = True
-                chat_id = str(message.chat.id)
                 if chat_id not in ALLOWED_GROUPS:
                     bot.reply_to(
                         message, "Я не отвечаю в этой группе. Обратитесь к @Krestnikov")
