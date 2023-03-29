@@ -36,7 +36,7 @@ mynames = ["@trololobot", "@кибердед", "trololo_bot",
 mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
            "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
-ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520", "-1001595078524", "-706973770"]
+ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520", "-1001595078524", "-706973770", "-831622604 "]
 
 port = os.environ.get("PORT", 8080)
 
@@ -269,7 +269,7 @@ def process_message(message):
             if rq.split()[0].lower() in mynames:
                 rq = rq[len(rq.split()[0]):].strip()
                 answer_message = True
-            elif (message.reply_to_message):
+            elif (message.reply_to_message and message.reply_to_message.from_user.id == bot.get_me().id):
                 answer_message = True
             else:
                 return
@@ -310,5 +310,4 @@ def process_message(message):
 
 
 if __name__ == "__main__":
-    gpt_utils.bot = bot
     bot.polling()
