@@ -5,18 +5,16 @@ import traceback
 from contextlib import redirect_stdout
 from io import StringIO
 
-import flask
+# import flask
 import openai
 import telebot
 import tiktoken
 
-import gpt_utils
-import random
 import uuid
 
 
-# Proxy server for accessing OpenAI API
-app = flask.Flask(__name__)
+# # Proxy server for accessing OpenAI API
+# app = flask.Flask(__name__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
@@ -35,10 +33,10 @@ print(f"Bot secret: {PREMIUM_SECRET}")
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
-# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
-#            "когдапридетвремя,", "времяпришло", "времяпришло,"]
+mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
+           "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
-ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520", "-1001595078524"]
+ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520", "-1001595078524", "-706973770"]
 
 port = os.environ.get("PORT", 8080)
 
@@ -278,10 +276,10 @@ def process_message(message):
 
             if answer_message:
                 if chat_id not in ALLOWED_GROUPS:
-                    bot.reply_to(
-                        message, f"Я не отвечаю в этой группе. Обратитесь к @Krestnikov, чтобы он добавил чат {chat_id} в базу")
+                    # bot.reply_to(
+                    #     message, f"Я не отвечаю в этой группе. Обратитесь к @Krestnikov, чтобы он добавил чат {chat_id} в базу")
                     return
-        elif message.chat.type == 'private' and not PREMIUM_SECRET in rq:
+        elif message.chat.type == 'private' and PREMIUM_SECRET not in rq:
             rq = str(message.text)
             ans = "Сейчас я не отвечаю в личных сообщениях, пишите в разрешенные группы"
             bot.reply_to(message, ans)
