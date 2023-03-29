@@ -33,8 +33,8 @@ print(f"Bot secret: {PREMIUM_SECRET}")
 
 mynames = ["@trololobot", "@кибердед", "trololo_bot",
            "кибердед", "кибердед,", "trololobot"]
-mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
-           "когдапридетвремя,", "времяпришло", "времяпришло,"]
+# mynames = ["whentimecomesbot", "когдапридетвремя", "@whentimecomesbot",
+#            "когдапридетвремя,", "времяпришло", "времяпришло,"]
 
 ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520", "-1001595078524", "-706973770", "-831622604 "]
 
