@@ -45,8 +45,8 @@ max_history = 7500  # History will be truncated after this length
 
 bot = telebot.TeleBot(TG_TOKEN)
 openai.api_key = OPENAI_API_KEY
-main_model = "gpt-4-0314"
-cheap_model = "gpt-3.5-turbo"
+# MAIN_MODEL = "gpt-4-0314"
+MAIN_MODEL = "gpt-3.5-turbo"
 
 # Load chats history from file
 users = {}
@@ -156,7 +156,7 @@ def _process_rq(user_id, rq, deep=0, chat_id=None, username=None):
         user = _get_user(user_id, username)
         if PREMIUM_SECRET in rq:
             user['premium'] = True
-            return f"Вы были переключены на premium модель {main_model}."
+            return f"Вы были переключены на premium модель {MAIN_MODEL}."
 
         if not user.get('premium', None):
             _log(f"User {user_id} is not premium and run out of money.")
@@ -188,10 +188,10 @@ def _process_rq(user_id, rq, deep=0, chat_id=None, username=None):
 
             # Truncate history but save first prompt
             maximum = max_history
-            model = main_model
-            if user.get('limit', False):
-                maximum = 3500
-                model = cheap_model
+            model = MAIN_MODEL
+            # if user.get('limit', False):
+            #     maximum = 3500
+            #     model = cheap_model
 
             while _count_tokens(user) > maximum:
                 user['history'].pop(1)
@@ -242,7 +242,7 @@ def send_welcome(message):
     user = _get_user(user_id)
     user['history'] = _get_clear_history(user_id)
     bot.reply_to(
-        message, f"Started! (History cleared). Using model {main_model}")
+        message, f"Started! (History cleared). Using model {MAIN_MODEL}")
 
 
 @bot.message_handler(commands=['code'])

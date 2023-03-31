@@ -1,0 +1,51 @@
+<html>
+<body>
+	<script>
+		// Функция для генерации случайного числа в заданном диапазоне
+		function randomInRange(min, max) {
+		  return Math.random() * (max - min) + min;
+		}
+
+		// Функция для создания прямоугольника с случайными параметрами
+		function createRandomRectangle(width, height, fieldSize) {
+		  const x = randomInRange(0, fieldSize - width);
+		  const y = randomInRange(0, fieldSize - height);
+		  const angle = randomInRange(0, 360);
+		  return { x, y, width, height, angle };
+		}
+
+		// Основная функция для решения задачи
+		function fillField(fieldSize, rectWidth, rectHeight, percent) {
+		  const field = document.createElement('div');
+		  field.style.width = fieldSize + 'px';
+		  field.style.height = fieldSize + 'px';
+		  field.style.backgroundColor = 'white';
+		  field.style.position = 'relative';
+		  document.body.appendChild(field);
+
+		  const totalArea = fieldSize * fieldSize;
+		  const rectArea = rectWidth * rectHeight;
+		  const targetArea = (percent / 100) * totalArea;
+		  let currentArea = 0;
+
+		  while (currentArea < targetArea) {
+		    const rectangle = createRandomRectangle(rectWidth, rectHeight, fieldSize);
+		    const rectElement = document.createElement('div');
+		    rectElement.style.width = rectangle.width + 'px';
+		    rectElement.style.height = rectangle.height + 'px';
+		    rectElement.style.backgroundColor = 'black';
+		    rectElement.style.position = 'absolute';
+		    rectElement.style.left = rectangle.x + 'px';
+		    rectElement.style.top = rectangle.y + 'px';
+		    rectElement.style.transform = `rotate(${rectangle.angle}deg)`;
+		    field.appendChild(rectElement);
+
+		    currentArea += rectArea;
+		  }
+		}
+
+		// Вызов функции с примерными параметрами
+		fillField(500, 50, 30, 60); // Ра
+	</script>
+</body>
+</html>
