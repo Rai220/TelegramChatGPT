@@ -41,7 +41,8 @@ ALLOWED_GROUPS = ["-925069924", "-1001786266241", "-951583520", "-1001595078524"
 port = os.environ.get("PORT", 8080)
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
-max_history = 7500  # History will be truncated after this length
+# max_history = 7500  # History will be truncated after this length
+max_history = 1500 # Fot GPT-3.5-turbo
 
 bot = telebot.TeleBot(TG_TOKEN)
 openai.api_key = OPENAI_API_KEY
@@ -240,7 +241,7 @@ def _process_rq(user_id, rq, deep=0, chat_id=None, username=None):
 def send_welcome(message):
     user_id = str(message.from_user.id)
     user = _get_user(user_id)
-    user['history'] = _get_clear_history(user_id)
+    user['history'] = _get_clear_history(user_id, str(message.from_user.username))
     bot.reply_to(
         message, f"Started! (History cleared). Using model {MAIN_MODEL}")
 
